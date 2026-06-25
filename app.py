@@ -82,6 +82,7 @@ class Bot(commands.Bot):
             print(f"❌ Failed to load cog: {e}")
             traceback.print_exc()
         
+        await asyncio.sleep(2)
         await self.tree.sync()
         print("✅ Slash commands synced globally")
         self.update_status.start()
@@ -148,6 +149,118 @@ async def sync_commands(interaction: discord.Interaction):
     await bot.tree.sync()
     await interaction.followup.send("✅ Commands synced globally!", ephemeral=True)
 
+@bot.tree.command(name="info", description="Get FreeFire player info by UID")
+async def info_slash(interaction: discord.Interaction, uid: str):
+    if not uid.isdigit() or len(uid) < 6:
+        await interaction.response.send_message("❌ Invalid UID. Must be at least 6 digits.")
+        return
+    
+    await interaction.response.defer()
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            api_url = f"http://raw.thug4ff.xyz/info?uid={uid}&key=great&region={DEFAULT_REGION}"
+            async with session.get(api_url) as response:
+                if response.status != 200:
+                    await interaction.followup.send("❌ API error. Try again later.")
+                    return
+                data = await response.json()
+        
+        basic_info = data.get('basicInfo', {})
+        clan_info = data.get('clanBasicInfo', {})
+        credit_score_info = data.get('creditScoreInfo', {})
+        pet_info = data.get('petInfo', {})
+        profile_info = data.get('profileInfo', {})
+        social_info = data.get('socialInfo', {})
+        
+        nickname = basic_info.get('nickname', 'Unknown')
+        region = basic_info.get('region', DEFAULT_REGION).upper()
+        
+        embed = discord.Embed(
+            title=f"🎮 {nickname}",
+            description=f"**UID:** `{uid}` | **Region:** `{region}`",
+            color=discord.Color.green()
+        )
+        
+        # Account Basic Info
+        embed.add_field(
+            name="📊 Account Basic Info",
+            value=f"```\n"
+                  f"Level: {basic_info.get('level', 'N/A')}\n"
+                  f"Exp: {basic_info.get('exp', 'N/A')}\n"
+                  f"Region: {region}\n"
+                  f"Likes: {basic_info.get('liked', 'N/A')}\n"
+                  f"Honor Score: {credit_score_info.get('creditScore', 'N/A')}\n"
+                  f"Signature: {social_info.get('signature', 'None')[:50]}\n"
+                  f"```",
+            inline=False
+        )
+        
+        # Ranks
+        embed.add_field(
+            name="🏆 Ranks",
+            value=f"```\n"
+                  f"BR Rank: {basic_info.get('rank', 'N/A')}\n"
+                  f"BR Points: {basic_info.get('rankingPoints', 'N/A')}\n"
+                  f"CS Rank: {basic_info.get('csRank', 'N/A')}\n"
+                  f"CS Points: {basic_info.get('csRankingPoints', 'N/A')}\n"
+                  f"```",
+            inline=True
+        )
+        
+        # Activity
+        embed.add_field(
+            name="⏱️ Activity",
+            value=f"```\n"
+                  f"Created: {basic_info.get('createAt', 'Not available')}\n"
+                  f"Last Login: {basic_info.get('lastLoginAt', 'Not available')}\n"
+                  f"Release: {basic_info.get('releaseVersion', 'N/A')}\n"
+                  f"Badges: {basic_info.get('badgeCnt', 'N/A')}\n"
+                  f"```",
+            inline=True
+        )
+        
+        # Clan Info
+        if clan_info:
+            embed.add_field(
+                name="👥 Clan Info",
+                value=f"```\n"
+                      f"Name: {clan_info.get('clanName', 'N/A')}\n"
+                      f"Level: {clan_info.get('clanLevel', 'N/A')}\n"
+                      f"Members: {clan_info.get('memberNum', '0')}/{clan_info.get('capacity', '0')}\n"
+                      f"```",
+                inline=False
+            )
+        
+        # Pet Info
+        if pet_info and pet_info.get('isSelected'):
+            embed.add_field(
+                name="🐾 Pet Info",
+                value=f"```\n"
+                      f"Name: {pet_info.get('name', 'N/A')}\n"
+                      f"Level: {pet_info.get('level', 'N/A')}\n"
+                      f"Exp: {pet_info.get('exp', 'N/A')}\n"
+                      f"```",
+                inline=True
+            )
+        
+        # Profile
+        embed.add_field(
+            name="🎨 Profile",
+            value=f"```\n"
+                  f"Avatar ID: {profile_info.get('avatarId', 'N/A')}\n"
+                  f"Banner ID: {basic_info.get('bannerId', 'N/A')}\n"
+                  f"Equipped Skills: {profile_info.get('equipedSkills', 'N/A')}\n"
+                  f"```",
+            inline=True
+        )
+        
+        embed.set_footer(text="FF-UID-TO-INFO | Data from FreeFire API")
+        await interaction.followup.send(embed=embed)
+        
+    except Exception as e:
+        await interaction.followup.send(f"❌ Error: {str(e)[:100]}")
+
 # ==================== PREFIX COMMAND (Fallback) ====================
 @bot.command(name="info")
 async def info_prefix(ctx, uid: str):
@@ -182,25 +295,46 @@ async def info_prefix(ctx, uid: str):
             description=f"**UID:** `{uid}` | **Region:** `{region}`",
             color=discord.Color.green()
         )
+        
+        # Account Basic Info
         embed.add_field(
             name="📊 Account Basic Info",
             value=f"```\n"
                   f"Level: {basic_info.get('level', 'N/A')}\n"
+                  f"Exp: {basic_info.get('exp', 'N/A')}\n"
+                  f"Region: {region}\n"
                   f"Likes: {basic_info.get('liked', 'N/A')}\n"
                   f"Honor Score: {credit_score_info.get('creditScore', 'N/A')}\n"
                   f"Signature: {social_info.get('signature', 'None')[:50]}\n"
                   f"```",
             inline=False
         )
+        
+        # Ranks
         embed.add_field(
             name="🏆 Ranks",
             value=f"```\n"
                   f"BR Rank: {basic_info.get('rank', 'N/A')}\n"
+                  f"BR Points: {basic_info.get('rankingPoints', 'N/A')}\n"
                   f"CS Rank: {basic_info.get('csRank', 'N/A')}\n"
+                  f"CS Points: {basic_info.get('csRankingPoints', 'N/A')}\n"
                   f"```",
             inline=True
         )
         
+        # Activity
+        embed.add_field(
+            name="⏱️ Activity",
+            value=f"```\n"
+                  f"Created: {basic_info.get('createAt', 'Not available')}\n"
+                  f"Last Login: {basic_info.get('lastLoginAt', 'Not available')}\n"
+                  f"Release: {basic_info.get('releaseVersion', 'N/A')}\n"
+                  f"Badges: {basic_info.get('badgeCnt', 'N/A')}\n"
+                  f"```",
+            inline=True
+        )
+        
+        # Clan Info
         if clan_info:
             embed.add_field(
                 name="👥 Clan Info",
@@ -212,15 +346,28 @@ async def info_prefix(ctx, uid: str):
                 inline=False
             )
         
+        # Pet Info
         if pet_info and pet_info.get('isSelected'):
             embed.add_field(
                 name="🐾 Pet Info",
                 value=f"```\n"
                       f"Name: {pet_info.get('name', 'N/A')}\n"
                       f"Level: {pet_info.get('level', 'N/A')}\n"
+                      f"Exp: {pet_info.get('exp', 'N/A')}\n"
                       f"```",
                 inline=True
             )
+        
+        # Profile
+        embed.add_field(
+            name="🎨 Profile",
+            value=f"```\n"
+                  f"Avatar ID: {profile_info.get('avatarId', 'N/A')}\n"
+                  f"Banner ID: {basic_info.get('bannerId', 'N/A')}\n"
+                  f"Equipped Skills: {profile_info.get('equipedSkills', 'N/A')}\n"
+                  f"```",
+            inline=True
+        )
         
         embed.set_footer(text="FF-UID-TO-INFO | Data from FreeFire API")
         await ctx.send(embed=embed)

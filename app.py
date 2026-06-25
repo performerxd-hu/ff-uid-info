@@ -83,6 +83,16 @@ class Bot(commands.Bot):
             traceback.print_exc()
         
         await asyncio.sleep(2)
+        
+        # Sync to EVERY guild the bot is already in (INSTANT)
+        for guild in self.guilds:
+            try:
+                await self.tree.sync(guild=guild)
+                print(f"✅ Synced commands to guild: {guild.name}")
+            except Exception as e:
+                print(f"❌ Failed to sync to {guild.name}: {e}")
+        
+        # Global sync as fallback
         await self.tree.sync()
         print("✅ Slash commands synced globally")
         self.update_status.start()
@@ -140,15 +150,22 @@ async def ping(interaction: discord.Interaction):
     latency = round(bot.latency * 1000)
     await interaction.response.send_message(f"🏓 Pong! `{latency}ms`")
 
-@bot.tree.command(name="sync", description="Sync slash commands (Owner only)")
+@bot.tree.command(name="sync", description="Sync slash commands instantly (Owner only)")
 async def sync_commands(interaction: discord.Interaction):
     if interaction.user.id != OWNER_ID:
         await interaction.response.send_message("❌ You don't have permission to use this command!", ephemeral=True)
         return
     
     await interaction.response.defer(ephemeral=True)
-    await bot.tree.sync()
-    await interaction.followup.send("✅ Commands synced globally!", ephemeral=True)
+    
+    # Sync to the current guild (server) — INSTANT
+    if interaction.guild:
+        await bot.tree.sync(guild=interaction.guild)
+        await interaction.followup.send(f"✅ Commands synced instantly to **{interaction.guild.name}**!", ephemeral=True)
+    else:
+        # If used in DMs, sync globally
+        await bot.tree.sync()
+        await interaction.followup.send("✅ Commands synced globally (may take up to 1 hour to propagate)!", ephemeral=True)
 
 @bot.tree.command(name="help", description="Get information about FF-UID-TO-INFO")
 async def help_command(interaction: discord.Interaction):
@@ -218,6 +235,7 @@ async def info_slash(interaction: discord.Interaction, uid: str):
             color=discord.Color.green()
         )
         
+        # Account Basic Info
         embed.add_field(
             name="📊 Account Basic Info",
             value=f"```\n"
@@ -231,6 +249,7 @@ async def info_slash(interaction: discord.Interaction, uid: str):
             inline=False
         )
         
+        # Ranks
         embed.add_field(
             name="🏆 Ranks",
             value=f"```\n"
@@ -242,6 +261,7 @@ async def info_slash(interaction: discord.Interaction, uid: str):
             inline=True
         )
         
+        # Activity
         embed.add_field(
             name="⏱️ Activity",
             value=f"```\n"
@@ -253,6 +273,7 @@ async def info_slash(interaction: discord.Interaction, uid: str):
             inline=True
         )
         
+        # Clan Info
         if clan_info:
             embed.add_field(
                 name="👥 Clan Info",
@@ -264,6 +285,7 @@ async def info_slash(interaction: discord.Interaction, uid: str):
                 inline=False
             )
         
+        # Pet Info
         if pet_info and pet_info.get('isSelected'):
             embed.add_field(
                 name="🐾 Pet Info",
@@ -275,6 +297,7 @@ async def info_slash(interaction: discord.Interaction, uid: str):
                 inline=True
             )
         
+        # Profile
         embed.add_field(
             name="🎨 Profile",
             value=f"```\n"
@@ -327,6 +350,7 @@ async def info_prefix(ctx, uid: str):
             color=discord.Color.green()
         )
         
+        # Account Basic Info
         embed.add_field(
             name="📊 Account Basic Info",
             value=f"```\n"
@@ -340,6 +364,7 @@ async def info_prefix(ctx, uid: str):
             inline=False
         )
         
+        # Ranks
         embed.add_field(
             name="🏆 Ranks",
             value=f"```\n"
@@ -351,6 +376,7 @@ async def info_prefix(ctx, uid: str):
             inline=True
         )
         
+        # Activity
         embed.add_field(
             name="⏱️ Activity",
             value=f"```\n"
@@ -362,6 +388,7 @@ async def info_prefix(ctx, uid: str):
             inline=True
         )
         
+        # Clan Info
         if clan_info:
             embed.add_field(
                 name="👥 Clan Info",
@@ -373,6 +400,7 @@ async def info_prefix(ctx, uid: str):
                 inline=False
             )
         
+        # Pet Info
         if pet_info and pet_info.get('isSelected'):
             embed.add_field(
                 name="🐾 Pet Info",
@@ -384,6 +412,7 @@ async def info_prefix(ctx, uid: str):
                 inline=True
             )
         
+        # Profile
         embed.add_field(
             name="🎨 Profile",
             value=f"```\n"

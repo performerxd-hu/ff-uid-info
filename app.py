@@ -15,7 +15,7 @@ load_dotenv(pathlib.Path("/etc/secrets/.env"))  # Render secret files path
 
 # Flask Setup
 app = Flask(__name__)
-bot_name = "Krishu X Cheats"
+bot_name = "ff-uid-info"
 
 @app.route('/')
 def home():
@@ -154,7 +154,7 @@ async def ping(interaction: discord.Interaction):
 @bot.tree.command(name="sync", description="Sync slash commands (Owner only)")
 async def sync_commands(interaction: discord.Interaction):
     # Owner check — apne user ID se replace karo
-    owner_id = 123456789  # 🔥 APNI DISCORD USER ID YAHAN DAALO 🔥
+    owner_id = 869918246441218088  # 🔥 APNI DISCORD USER ID YAHAN DAALO 🔥
     
     if interaction.user.id == owner_id:
         await bot.tree.sync()

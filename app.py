@@ -131,9 +131,10 @@ class Bot(commands.Bot):
 bot = Bot()
 
 # ==================== OWNER ID ====================
-OWNER_ID = 869918246441218088  # 🔥 APNI DISCORD USER ID YAHAN DAALO 🔥
+OWNER_ID = 869918246441218088  # 🔥 YOUR DISCORD USER ID 🔥
 
 # ==================== SLASH COMMANDS ====================
+
 @bot.tree.command(name="ping", description="Check bot latency")
 async def ping(interaction: discord.Interaction):
     latency = round(bot.latency * 1000)
@@ -148,7 +149,7 @@ async def sync_commands(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
     await bot.tree.sync()
     await interaction.followup.send("✅ Commands synced globally!", ephemeral=True)
-    
+
 @bot.tree.command(name="help", description="Get information about FF-UID-TO-INFO")
 async def help_command(interaction: discord.Interaction):
     embed = discord.Embed(
@@ -183,7 +184,7 @@ async def help_command(interaction: discord.Interaction):
     )
     embed.set_footer(text="FF-UID-TO-INFO • Made with ❤️")
     await interaction.response.send_message(embed=embed)
-    
+
 @bot.tree.command(name="info", description="Get FreeFire player info by UID")
 async def info_slash(interaction: discord.Interaction, uid: str):
     if not uid.isdigit() or len(uid) < 6:
@@ -217,7 +218,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
             color=discord.Color.green()
         )
         
-        # Account Basic Info
         embed.add_field(
             name="📊 Account Basic Info",
             value=f"```\n"
@@ -231,7 +231,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
             inline=False
         )
         
-        # Ranks
         embed.add_field(
             name="🏆 Ranks",
             value=f"```\n"
@@ -243,7 +242,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
             inline=True
         )
         
-        # Activity
         embed.add_field(
             name="⏱️ Activity",
             value=f"```\n"
@@ -255,7 +253,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
             inline=True
         )
         
-        # Clan Info
         if clan_info:
             embed.add_field(
                 name="👥 Clan Info",
@@ -267,7 +264,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
                 inline=False
             )
         
-        # Pet Info
         if pet_info and pet_info.get('isSelected'):
             embed.add_field(
                 name="🐾 Pet Info",
@@ -279,7 +275,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
                 inline=True
             )
         
-        # Profile
         embed.add_field(
             name="🎨 Profile",
             value=f"```\n"
@@ -297,6 +292,7 @@ async def info_slash(interaction: discord.Interaction, uid: str):
         await interaction.followup.send(f"❌ Error: {str(e)[:100]}")
 
 # ==================== PREFIX COMMAND (Fallback) ====================
+
 @bot.command(name="info")
 async def info_prefix(ctx, uid: str):
     """Get FreeFire player info (prefix command)"""
@@ -331,7 +327,6 @@ async def info_prefix(ctx, uid: str):
             color=discord.Color.green()
         )
         
-        # Account Basic Info
         embed.add_field(
             name="📊 Account Basic Info",
             value=f"```\n"
@@ -345,7 +340,6 @@ async def info_prefix(ctx, uid: str):
             inline=False
         )
         
-        # Ranks
         embed.add_field(
             name="🏆 Ranks",
             value=f"```\n"
@@ -357,7 +351,6 @@ async def info_prefix(ctx, uid: str):
             inline=True
         )
         
-        # Activity
         embed.add_field(
             name="⏱️ Activity",
             value=f"```\n"
@@ -369,7 +362,6 @@ async def info_prefix(ctx, uid: str):
             inline=True
         )
         
-        # Clan Info
         if clan_info:
             embed.add_field(
                 name="👥 Clan Info",
@@ -381,7 +373,6 @@ async def info_prefix(ctx, uid: str):
                 inline=False
             )
         
-        # Pet Info
         if pet_info and pet_info.get('isSelected'):
             embed.add_field(
                 name="🐾 Pet Info",
@@ -393,7 +384,6 @@ async def info_prefix(ctx, uid: str):
                 inline=True
             )
         
-        # Profile
         embed.add_field(
             name="🎨 Profile",
             value=f"```\n"
@@ -411,6 +401,7 @@ async def info_prefix(ctx, uid: str):
         await ctx.send(f"❌ Error: {str(e)[:100]}")
 
 # ==================== MAIN ====================
+
 async def main():
     try:
         await bot.start(TOKEN)

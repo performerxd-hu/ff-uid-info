@@ -10,12 +10,12 @@ from dotenv import load_dotenv
 import pathlib
 
 # Try to load .env from multiple possible locations
-load_dotenv()  # Current directory
-load_dotenv(pathlib.Path("/etc/secrets/.env"))  # Render secret files path
+load_dotenv()
+load_dotenv(pathlib.Path("/etc/secrets/.env"))
 
 # Flask Setup
 app = Flask(__name__)
-bot_name = "ff-uid-info"
+bot_name = "FF-UID-TO-INFO"
 
 @app.route('/')
 def home():
@@ -41,7 +41,6 @@ if not TOKEN:
     except:
         pass
 
-# If still no token, try current directory .env
 if not TOKEN:
     try:
         env_path = pathlib.Path(".env")
@@ -66,7 +65,7 @@ class Bot(commands.Bot):
         intents.message_content = True
         
         super().__init__(
-            command_prefix="!",  # Prefix commands (optional)
+            command_prefix="!",
             intents=intents,
             help_command=None
         )
@@ -74,23 +73,17 @@ class Bot(commands.Bot):
         self.default_region = DEFAULT_REGION
 
     async def setup_hook(self):
-        """Setup ho raha hai — cogs load aur commands sync"""
         self.session = aiohttp.ClientSession()
         
-        # INFO: Cogs folder mein infoCommands.py hona chahiye
         try:
             await self.load_extension("cogs.infoCommands")
             print("✅ Loaded InfoCommands cog")
         except Exception as e:
             print(f"❌ Failed to load cog: {e}")
             traceback.print_exc()
-            print("\n💡 TIP: Make sure 'cogs/infoCommands.py' exists!")
         
-        # Sync slash commands globally
         await self.tree.sync()
         print("✅ Slash commands synced globally")
-        
-        # Start status update loop
         self.update_status.start()
 
     async def on_ready(self):
@@ -100,17 +93,14 @@ class Bot(commands.Bot):
         print(f"\n{'='*50}")
         print(f"✅ Connected as {bot_name}")
         print(f"🌐 In {len(self.guilds)} servers")
-        print(f"📝 Invite Link: https://discord.com/oauth2/authorize?client_id={self.user.id}&permissions=8&scope=bot%20applications.commands")
         print(f"{'='*50}\n")
         
-        # Flask server for hosting platforms (Render, etc.)
         if os.environ.get('RENDER'):
             import threading
             flask_thread = threading.Thread(target=run_flask, daemon=True)
             flask_thread.start()
             print("🚀 Flask server started on port 10000")
         
-        # Set initial status
         activity = discord.Activity(
             type=discord.ActivityType.watching,
             name=f"{len(self.guilds)} servers | /info UID"
@@ -119,7 +109,6 @@ class Bot(commands.Bot):
 
     @tasks.loop(minutes=5)
     async def update_status(self):
-        """Bot status update every 5 minutes"""
         try:
             activity = discord.Activity(
                 type=discord.ActivityType.watching,
@@ -134,37 +123,112 @@ class Bot(commands.Bot):
         await self.wait_until_ready()
 
     async def close(self):
-        """Clean shutdown"""
         if self.session:
             await self.session.close()
         await super().close()
 
-
-# ==================== CREATE BOT INSTANCE ====================
 bot = Bot()
 
+# ==================== OWNER ID ====================
+OWNER_ID = 869918246441218088  # 🔥 APNI DISCORD USER ID YAHAN DAALO 🔥
 
-# ==================== DEBUG COMMANDS ====================
+# ==================== SLASH COMMANDS ====================
 @bot.tree.command(name="ping", description="Check bot latency")
 async def ping(interaction: discord.Interaction):
     latency = round(bot.latency * 1000)
     await interaction.response.send_message(f"🏓 Pong! `{latency}ms`")
 
-
 @bot.tree.command(name="sync", description="Sync slash commands (Owner only)")
 async def sync_commands(interaction: discord.Interaction):
-    # Owner check — apne user ID se replace karo
-    owner_id = 869918246441218088  # 🔥 APNI DISCORD USER ID YAHAN DAALO 🔥
-    
-    if interaction.user.id == owner_id:
-        await bot.tree.sync()
-        await interaction.response.send_message("✅ Commands synced globally!", ephemeral=True)
-    else:
+    if interaction.user.id != OWNER_ID:
         await interaction.response.send_message("❌ You don't have permission to use this command!", ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    await bot.tree.sync()
+    await interaction.followup.send("✅ Commands synced globally!", ephemeral=True)
 
+# ==================== PREFIX COMMAND (Fallback) ====================
+@bot.command(name="info")
+async def info_prefix(ctx, uid: str):
+    """Get FreeFire player info (prefix command)"""
+    if not uid.isdigit() or len(uid) < 6:
+        await ctx.send("❌ Invalid UID. Must be at least 6 digits.")
+        return
+    
+    await ctx.send("⏳ Fetching player data...")
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            api_url = f"http://raw.thug4ff.xyz/info?uid={uid}&key=great&region={DEFAULT_REGION}"
+            async with session.get(api_url) as response:
+                if response.status != 200:
+                    await ctx.send("❌ API error. Try again later.")
+                    return
+                data = await response.json()
+        
+        basic_info = data.get('basicInfo', {})
+        clan_info = data.get('clanBasicInfo', {})
+        credit_score_info = data.get('creditScoreInfo', {})
+        pet_info = data.get('petInfo', {})
+        profile_info = data.get('profileInfo', {})
+        social_info = data.get('socialInfo', {})
+        
+        nickname = basic_info.get('nickname', 'Unknown')
+        region = basic_info.get('region', DEFAULT_REGION).upper()
+        
+        embed = discord.Embed(
+            title=f"🎮 {nickname}",
+            description=f"**UID:** `{uid}` | **Region:** `{region}`",
+            color=discord.Color.green()
+        )
+        embed.add_field(
+            name="📊 Account Basic Info",
+            value=f"```\n"
+                  f"Level: {basic_info.get('level', 'N/A')}\n"
+                  f"Likes: {basic_info.get('liked', 'N/A')}\n"
+                  f"Honor Score: {credit_score_info.get('creditScore', 'N/A')}\n"
+                  f"Signature: {social_info.get('signature', 'None')[:50]}\n"
+                  f"```",
+            inline=False
+        )
+        embed.add_field(
+            name="🏆 Ranks",
+            value=f"```\n"
+                  f"BR Rank: {basic_info.get('rank', 'N/A')}\n"
+                  f"CS Rank: {basic_info.get('csRank', 'N/A')}\n"
+                  f"```",
+            inline=True
+        )
+        
+        if clan_info:
+            embed.add_field(
+                name="👥 Clan Info",
+                value=f"```\n"
+                      f"Name: {clan_info.get('clanName', 'N/A')}\n"
+                      f"Level: {clan_info.get('clanLevel', 'N/A')}\n"
+                      f"Members: {clan_info.get('memberNum', '0')}/{clan_info.get('capacity', '0')}\n"
+                      f"```",
+                inline=False
+            )
+        
+        if pet_info and pet_info.get('isSelected'):
+            embed.add_field(
+                name="🐾 Pet Info",
+                value=f"```\n"
+                      f"Name: {pet_info.get('name', 'N/A')}\n"
+                      f"Level: {pet_info.get('level', 'N/A')}\n"
+                      f"```",
+                inline=True
+            )
+        
+        embed.set_footer(text="FF-UID-TO-INFO | Data from FreeFire API")
+        await ctx.send(embed=embed)
+        
+    except Exception as e:
+        await ctx.send(f"❌ Error: {str(e)[:100]}")
 
 # ==================== MAIN ====================
-
 async def main():
     try:
         await bot.start(TOKEN)
@@ -177,9 +241,7 @@ async def main():
         await bot.close()
 
 if __name__ == "__main__":
-    # Render.com ya other hosting platforms ke liye
     if os.environ.get('RENDER'):
         asyncio.run(main())
     else:
-        # Local run
         bot.run(TOKEN)

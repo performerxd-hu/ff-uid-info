@@ -7,12 +7,15 @@ import sys
 import aiohttp
 import asyncio
 from dotenv import load_dotenv
+import pathlib
 
-load_dotenv()
+# Try to load .env from multiple possible locations
+load_dotenv()  # Current directory
+load_dotenv(pathlib.Path("/etc/secrets/.env"))  # Render secret files path
 
 # Flask Setup
 app = Flask(__name__)
-bot_name = "FF-UID-TO-INFO"
+bot_name = "Krishu X Cheats"
 
 @app.route('/')
 def home():
@@ -24,8 +27,35 @@ def run_flask():
 
 # Discord Bot
 TOKEN = os.getenv("TOKEN")
+
+# If TOKEN is still missing, try to read from .env file directly
 if not TOKEN:
-    raise ValueError("Missing TOKEN in environment")
+    try:
+        env_path = pathlib.Path("/etc/secrets/.env")
+        if env_path.exists():
+            with open(env_path, 'r') as f:
+                for line in f:
+                    if line.startswith('TOKEN='):
+                        TOKEN = line.strip().split('=')[1]
+                        break
+    except:
+        pass
+
+# If still no token, try current directory .env
+if not TOKEN:
+    try:
+        env_path = pathlib.Path(".env")
+        if env_path.exists():
+            with open(env_path, 'r') as f:
+                for line in f:
+                    if line.startswith('TOKEN='):
+                        TOKEN = line.strip().split('=')[1]
+                        break
+    except:
+        pass
+
+if not TOKEN:
+    raise ValueError("Missing TOKEN in environment. Please add TOKEN as an environment variable or secret file.")
 
 # Default region for Free Fire
 DEFAULT_REGION = "IND"

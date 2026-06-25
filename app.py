@@ -28,7 +28,6 @@ def run_flask():
 # Discord Bot
 TOKEN = os.getenv("TOKEN")
 
-# If TOKEN is still missing, try to read from .env file directly
 if not TOKEN:
     try:
         env_path = pathlib.Path("/etc/secrets/.env")
@@ -56,7 +55,6 @@ if not TOKEN:
 if not TOKEN:
     raise ValueError("Missing TOKEN in environment. Please add TOKEN as an environment variable or secret file.")
 
-# Default region for Free Fire
 DEFAULT_REGION = "IND"
 
 class Bot(commands.Bot):
@@ -84,7 +82,7 @@ class Bot(commands.Bot):
         
         await asyncio.sleep(2)
         
-        # Sync to EVERY guild the bot is already in (INSTANT)
+        # Sync to EVERY guild the bot is in — INSTANT
         for guild in self.guilds:
             try:
                 await self.tree.sync(guild=guild)
@@ -92,7 +90,7 @@ class Bot(commands.Bot):
             except Exception as e:
                 print(f"❌ Failed to sync to {guild.name}: {e}")
         
-        # Global sync as fallback
+        # Global sync as fallback (only for new servers)
         await self.tree.sync()
         print("✅ Slash commands synced globally")
         self.update_status.start()
@@ -158,14 +156,12 @@ async def sync_commands(interaction: discord.Interaction):
     
     await interaction.response.defer(ephemeral=True)
     
-    # Sync to the current guild (server) — INSTANT
+    # ALWAYS sync to the current guild — INSTANT
     if interaction.guild:
         await bot.tree.sync(guild=interaction.guild)
-        await interaction.followup.send(f"✅ Commands synced instantly to **{interaction.guild.name}**!", ephemeral=True)
+        await interaction.followup.send(f"✅ Commands synced instantly to **{interaction.guild.name}**! Use `/` to see them now.", ephemeral=True)
     else:
-        # If used in DMs, sync globally
-        await bot.tree.sync()
-        await interaction.followup.send("✅ Commands synced globally (may take up to 1 hour to propagate)!", ephemeral=True)
+        await interaction.followup.send("❌ Please use this command in a server, not in DMs!", ephemeral=True)
 
 @bot.tree.command(name="help", description="Get information about FF-UID-TO-INFO")
 async def help_command(interaction: discord.Interaction):
@@ -235,7 +231,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
             color=discord.Color.green()
         )
         
-        # Account Basic Info
         embed.add_field(
             name="📊 Account Basic Info",
             value=f"```\n"
@@ -249,7 +244,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
             inline=False
         )
         
-        # Ranks
         embed.add_field(
             name="🏆 Ranks",
             value=f"```\n"
@@ -261,7 +255,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
             inline=True
         )
         
-        # Activity
         embed.add_field(
             name="⏱️ Activity",
             value=f"```\n"
@@ -273,7 +266,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
             inline=True
         )
         
-        # Clan Info
         if clan_info:
             embed.add_field(
                 name="👥 Clan Info",
@@ -285,7 +277,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
                 inline=False
             )
         
-        # Pet Info
         if pet_info and pet_info.get('isSelected'):
             embed.add_field(
                 name="🐾 Pet Info",
@@ -297,7 +288,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
                 inline=True
             )
         
-        # Profile
         embed.add_field(
             name="🎨 Profile",
             value=f"```\n"
@@ -318,7 +308,6 @@ async def info_slash(interaction: discord.Interaction, uid: str):
 
 @bot.command(name="info")
 async def info_prefix(ctx, uid: str):
-    """Get FreeFire player info (prefix command)"""
     if not uid.isdigit() or len(uid) < 6:
         await ctx.send("❌ Invalid UID. Must be at least 6 digits.")
         return
@@ -350,7 +339,6 @@ async def info_prefix(ctx, uid: str):
             color=discord.Color.green()
         )
         
-        # Account Basic Info
         embed.add_field(
             name="📊 Account Basic Info",
             value=f"```\n"
@@ -364,7 +352,6 @@ async def info_prefix(ctx, uid: str):
             inline=False
         )
         
-        # Ranks
         embed.add_field(
             name="🏆 Ranks",
             value=f"```\n"
@@ -376,7 +363,6 @@ async def info_prefix(ctx, uid: str):
             inline=True
         )
         
-        # Activity
         embed.add_field(
             name="⏱️ Activity",
             value=f"```\n"
@@ -388,7 +374,6 @@ async def info_prefix(ctx, uid: str):
             inline=True
         )
         
-        # Clan Info
         if clan_info:
             embed.add_field(
                 name="👥 Clan Info",
@@ -400,7 +385,6 @@ async def info_prefix(ctx, uid: str):
                 inline=False
             )
         
-        # Pet Info
         if pet_info and pet_info.get('isSelected'):
             embed.add_field(
                 name="🐾 Pet Info",
@@ -412,7 +396,6 @@ async def info_prefix(ctx, uid: str):
                 inline=True
             )
         
-        # Profile
         embed.add_field(
             name="🎨 Profile",
             value=f"```\n"

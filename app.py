@@ -148,7 +148,42 @@ async def sync_commands(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
     await bot.tree.sync()
     await interaction.followup.send("✅ Commands synced globally!", ephemeral=True)
-
+    
+@bot.tree.command(name="help", description="Get information about FF-UID-TO-INFO")
+async def help_command(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="ℹ️ About FF-UID-TO-INFO",
+        description="Your go-to Free Fire UID Info Bot",
+        color=discord.Color.gold()
+    )
+    embed.add_field(
+        name="📋 Commands",
+        value="```\n"
+              "/info <UID>   - Get Free Fire player stats\n"
+              "/ping         - Check bot latency\n"
+              "/help         - Show this help menu\n"
+              "/sync         - Sync slash commands (Owner only)\n"
+              "```",
+        inline=False
+    )
+    embed.add_field(
+        name="🌐 Servers",
+        value=f"**{len(bot.guilds)}** servers",
+        inline=True
+    )
+    embed.add_field(
+        name="⚡ Latency",
+        value=f"**{round(bot.latency * 1000)}ms**",
+        inline=True
+    )
+    embed.add_field(
+        name="📊 Data Source",
+        value="FreeFire API",
+        inline=True
+    )
+    embed.set_footer(text="FF-UID-TO-INFO • Made with ❤️")
+    await interaction.response.send_message(embed=embed)
+    
 @bot.tree.command(name="info", description="Get FreeFire player info by UID")
 async def info_slash(interaction: discord.Interaction, uid: str):
     if not uid.isdigit() or len(uid) < 6:

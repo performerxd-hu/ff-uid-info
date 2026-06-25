@@ -145,7 +145,7 @@ class InfoCommands(commands.Cog):
                           f"Level: {pet_info.get('level', 'N/A')}\n"
                           f"Exp: {pet_info.get('exp', 'N/A')}\n"
                           f"```",
-                    inline=True
+                inline=True
                 )
             
             # Profile
@@ -159,22 +159,9 @@ class InfoCommands(commands.Cog):
                 inline=True
             )
             
-            embed.set_footer(text="FF-UID-INFO | Data from FreeFire API")
+            embed.set_footer(text="FF-UID-TO-INFO | Data from FreeFire API")
             
             await ctx.send(embed=embed)
-            
-            # Try to send outfit image
-            try:
-                image_url = f"http://profile.thug4ff.xyz/api/profile?uid={uid}"
-                async with self.session.get(image_url) as img_response:
-                    if img_response.status == 200:
-                        from io import BytesIO
-                        import uuid
-                        image_data = await img_response.read()
-                        file = discord.File(BytesIO(image_data), filename=f"outfit_{uuid.uuid4().hex[:8]}.png")
-                        await ctx.send(file=file)
-            except Exception as e:
-                print(f"Image generation failed: {e}")
 
         except Exception as e:
             embed = discord.Embed(
